@@ -1,7 +1,0 @@
-about_PS.DrawIO.Registry
-
-SHORT DESCRIPTION
-The PS.DrawIO.Registry module validates, stores, and resolves provider declarations.
-
-LONG DESCRIPTION
-Provider declarations are data at module boundaries. The registry validates declarations and does not execute provider code.

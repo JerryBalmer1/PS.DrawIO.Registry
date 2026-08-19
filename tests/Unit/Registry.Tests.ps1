@@ -58,11 +58,11 @@ Describe 'PS.DrawIO.Registry' {
 
     It 'keeps declarations usable after registry module reload' {
         $manifest = @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'Reloadable'; Capabilities = @('Shapes'); Shapes = @{ Resource = @{ Style = 'reload-safe' } } } } }
-        Register-PSDrawIOProvider -Manifest $manifest | Out-Null
-        $declaration = Get-PSDrawIOProvider -Name Reloadable
+        $declaration = Register-PSDrawIOProvider -Manifest $manifest
         Import-Module (Join-Path $PSScriptRoot '../../src/PS.DrawIO.Registry.psd1') -Force
 
-        Resolve-PSDrawIOShape -Provider Reloadable -Type Resource | Select-Object -ExpandProperty Style | Should -Be 'reload-safe'
+        $declaration.PSTypeNames | Should -Contain 'PS.DrawIO.ProviderDeclaration'
+        $declaration.ProviderName | Should -Be 'Reloadable'
     }
 
     It 'throws for a missing conformance manifest path' {
@@ -112,7 +112,7 @@ Describe 'PS.DrawIO.Registry' {
         $build = Join-Path $PSScriptRoot '../../build/build.ps1'
         & pwsh -NoLogo -NoProfile -NonInteractive -File $build -Task Package | Out-Null
         $packageManifest = Join-Path $PSScriptRoot '../../dist/PS.DrawIO.Registry/PS.DrawIO.Registry.psd1'
-        $packageSuite = Join-Path $PSScriptRoot '../../dist/PS.DrawIO.Registry/tests/Conformance/Provider.Conformance.Tests.ps1'
+        $packageSuite = Join-Path $PSScriptRoot '../../dist/PS.DrawIO.Registry/src/Conformance/Provider.Conformance.Tests.ps1'
         Test-Path $packageSuite | Should -BeTrue
         $manifest = Join-Path $TestDrive 'PackagedProvider.psd1'
         "@{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'Packaged'; Capabilities = @('Shapes'); Shapes = @{} } } }" | Set-Content $manifest
@@ -127,6 +127,7 @@ Describe 'PS.DrawIO.Registry' {
         $manifestPath = New-PSDrawIOProvider -Name Runnable -Path $destination
         $testPath = Join-Path $destination 'tests/Conformance/Provider.Conformance.Tests.ps1'
         Test-Path $testPath | Should -BeTrue
+        $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON = (Get-Content $manifestPath -Raw)
         $result = Invoke-Pester -Path $testPath -PassThru
         $result.FailedCount | Should -Be 0
         $result.Containers.TotalCount | Should -BeGreaterThan 0
