@@ -1,9 +1,8 @@
 BeforeAll {
-    $json = $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON
-    if ([string]::IsNullOrWhiteSpace($json)) {
-        $json = '{"PrivateData":{"PSDrawIO":{"ContractVersion":1,"ProviderName":"DefaultFixture","Capabilities":["Shapes"],"Shapes":{}}}}'
+    if ([string]::IsNullOrWhiteSpace($env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON)) {
+        throw "PSDRAWIO_CONFORMANCE_MANIFEST_JSON is required to run provider conformance."
     }
-    $manifest = $json | ConvertFrom-Json
+    $manifest = $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON | ConvertFrom-Json
     $drawIO = $manifest.PrivateData.PSDrawIO
 }
 

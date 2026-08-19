@@ -25,21 +25,28 @@ function ConvertTo-PSDrawIODeclaration {
         }
     }
 
-    $declaration = [PSDrawIOProviderDeclaration]::new()
-    try { $declaration.ContractVersion = [int]$psDrawIO.ContractVersion } catch { throw "Provider declaration field 'ContractVersion' must be an integer." }
-    $declaration.ProviderName = [string]$psDrawIO.ProviderName
-    $declaration.Capabilities = @($psDrawIO.Capabilities | ForEach-Object { [string]$_ })
-    $declaration.Shapes = if ($psDrawIO.Shapes) { @{} + $psDrawIO.Shapes } else { @{} }
-    $declaration.Metadata = if ($psDrawIO.Metadata) { @{} + $psDrawIO.Metadata } else { @{} }
+    $contractVersion = 0
+    try { $contractVersion = [int]$psDrawIO.ContractVersion } catch { throw "Provider declaration field 'ContractVersion' must be an integer." }
+    $providerName = [string]$psDrawIO.ProviderName
+    $capabilities = @($psDrawIO.Capabilities | ForEach-Object { [string]$_ })
+    $shapes = if ($psDrawIO.Shapes) { @{} + $psDrawIO.Shapes } else { @{} }
+    $metadata = if ($psDrawIO.Metadata) { @{} + $psDrawIO.Metadata } else { @{} }
 
-    if ($declaration.ContractVersion -lt 1) { throw "Provider declaration field 'ContractVersion' must be 1 or greater." }
-    if ([string]::IsNullOrWhiteSpace($declaration.ProviderName)) { throw "Provider declaration field 'ProviderName' cannot be empty." }
-    if ($declaration.Capabilities.Count -eq 0) { throw "Provider declaration field 'Capabilities' must contain at least one capability." }
-    foreach ($shapeType in $declaration.Shapes.Keys) {
-        if ([string]::IsNullOrWhiteSpace([string]$shapeType) -or $null -eq $declaration.Shapes[$shapeType]) {
+    if ($contractVersion -lt 1) { throw "Provider declaration field 'ContractVersion' must be 1 or greater." }
+    if ([string]::IsNullOrWhiteSpace($providerName)) { throw "Provider declaration field 'ProviderName' cannot be empty." }
+    if ($capabilities.Count -eq 0) { throw "Provider declaration field 'Capabilities' must contain at least one capability." }
+    foreach ($shapeType in $shapes.Keys) {
+        if ([string]::IsNullOrWhiteSpace([string]$shapeType) -or $null -eq $shapes[$shapeType]) {
             throw "Provider declaration field 'Shapes' contains an invalid shape entry."
         }
     }
 
-    return $declaration
+    return [pscustomobject]@{
+        PSTypeName = 'PS.DrawIO.ProviderDeclaration'
+        ProviderName = $providerName
+        ContractVersion = $contractVersion
+        Capabilities = $capabilities
+        Shapes = $shapes
+        Metadata = $metadata
+    }
 }

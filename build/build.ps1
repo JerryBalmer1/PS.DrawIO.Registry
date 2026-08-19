@@ -17,7 +17,8 @@ if ($Task -in 'All', 'Analyze') {
 }
 if ($Task -in 'All', 'Test') {
     $isCI = [bool]$env:CI -or [bool]$env:TF_BUILD -or [bool]$env:GITHUB_ACTIONS
-    $result = Invoke-Pester (Join-Path $root 'tests') -PassThru
+    $testPaths = @(Get-ChildItem -LiteralPath (Join-Path $root 'tests') -Directory | Where-Object Name -ne 'Conformance' | Select-Object -ExpandProperty FullName)
+    $result = Invoke-Pester -Path $testPaths -PassThru
     if ($result.FailedCount -gt 0) {
         if ($isCI) { exit 1 }
         throw "Pester: $($result.FailedCount) test(s) failed."
@@ -32,5 +33,7 @@ if ($Task -in 'All', 'Package') {
     Test-ModuleManifest $manifestPath | Out-Null
     New-Item -ItemType Directory -Path $packagePath -Force | Out-Null
     Copy-Item (Join-Path $root 'src/*') $packagePath -Recurse -Force
+    New-Item -ItemType Directory -Path (Join-Path $packagePath 'tests/Conformance') -Force | Out-Null
+    Copy-Item (Join-Path $root 'tests/Conformance/*') (Join-Path $packagePath 'tests/Conformance') -Recurse -Force
     Write-Output "Packaged module at $packagePath"
 }
