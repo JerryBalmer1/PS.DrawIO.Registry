@@ -75,7 +75,7 @@ Engaged when: writing or changing code in `src/`.
 - Pipeline-aware where it makes sense: `ValueFromPipeline`, `begin`/`process`/`end`
 - Throw terminating errors for contract violations. Never `Write-Host`.
 - PowerShell 7+ target — use modern syntax freely, and **no 5.1 compatibility shims**
-- Prefer PS classes for the contract objects (real type safety), functions for behavior
+- Use PSCustomObject declarations with `PSTypeName` plus validation at module boundaries. Keep PS classes internal; class identity is tied to the defining module session and does not safely cross dynamically discovered provider boundaries. Use functions for behavior.
 
 ### 🧪 Test Engineer
 Engaged when: any change lands in `src/`.
@@ -93,7 +93,7 @@ Engaged when: touching `build/`, CI, or the manifest.
 - Pipeline order is fixed: **clean → analyze → test → package**
 - `PSScriptAnalyzer` must be clean at Error and Warning. Suppressions require an inline justification comment.
 - `Test-ModuleManifest` must pass before packaging
-- CI matrix covers Windows, Linux, macOS on PowerShell 7+
+- CI matrix covers Windows and Linux on PowerShell 7+; macOS is out of scope until hardware is available.
 - Build must be reproducible from a clean clone with no manual steps
 
 ### 📖 Technical Writer
@@ -151,7 +151,7 @@ Engaged when: docs change, or a public function's behavior changes.
 ./build/build.ps1                          # full: clean → analyze → test → package
 ./build/build.ps1 -Task Test               # tests only
 Invoke-Pester ./tests -Output Detailed     # direct
-Invoke-Pester ./tests -CI                  # CI mode, exit codes
+Invoke-Pester ./tests -PassThru             # inspect FailedCount and Containers.Result
 Invoke-ScriptAnalyzer -Path ./src -Recurse -Severity Error,Warning
 Test-ModuleManifest ./src/PS.DrawIO.Registry.psd1
 Import-Module ./src/PS.DrawIO.Registry.psd1 -Force

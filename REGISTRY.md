@@ -113,6 +113,10 @@ This is the single most important boundary in the system. Violating it turns the
 
 Note what the registry returns: a **declaration**, not a rendered shape. Core does the applying. The registry never touches XML.
 
+### Contract object boundary
+
+Declarations crossing module boundaries are PSCustomObject data with a `PSTypeName`, validated by registry functions. PS classes remain internal implementation details: their identity is tied to the defining module session, and class-typed parameters are not safe for dynamically discovered providers that cross module boundaries.
+
 ---
 
 ## 5. Versioning

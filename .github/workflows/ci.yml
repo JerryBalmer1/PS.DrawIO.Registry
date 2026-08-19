@@ -1,0 +1,20 @@
+name: Registry CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pester and PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module Pester -MinimumVersion 5.0.0 -Force -Scope CurrentUser; Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+      - name: Build
+        shell: pwsh
+        run: ./build/build.ps1
