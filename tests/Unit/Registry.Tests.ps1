@@ -132,4 +132,9 @@ Describe 'PS.DrawIO.Registry' {
         $result.FailedCount | Should -Be 0
         $result.Containers.TotalCount | Should -BeGreaterThan 0
     }
+
+    It 'has a valid about_ help topic file' {
+        $helpFile = Join-Path $PSScriptRoot '../../src/en-US/about_PS.DrawIO.Registry.help.txt'
+        Test-Path -LiteralPath $helpFile | Should -BeTrue
+    }
 }
