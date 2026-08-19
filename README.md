@@ -1,0 +1,1 @@
+# PS.DrawIO.Registry
