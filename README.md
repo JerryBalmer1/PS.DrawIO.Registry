@@ -12,3 +12,7 @@ $declaration.Style
 The registry validates and stores provider declarations. XML generation, layout, and domain knowledge remain in provider and Core modules.
 
 The cross-platform test gate has an unsigned manual sign-off at `docs/SIGNOFF.json`; a human must countersign it against the reviewed commit. macOS execution remains out of scope until hardware is available.
+
+## Development
+
+Run `git config core.hooksPath .githooks` after cloning to enable the commit-msg hook.
