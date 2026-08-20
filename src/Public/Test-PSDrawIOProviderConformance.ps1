@@ -28,8 +28,8 @@ function Test-PSDrawIOProviderConformance {
     $validName = Test-PSDrawIOProviderNameInternal -Name $declaration.ProviderName
     if (-not $validName -or $declaration.ContractVersion -ne $script:PSDrawIORegistryState.ContractVersion) { return $false }
 
-    $moduleRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-    $suitePath = Join-Path $moduleRoot 'src/Conformance/Provider.Conformance.Tests.ps1'
+    $moduleRoot = Split-Path $PSScriptRoot -Parent
+    $suitePath = Join-Path $moduleRoot 'Conformance/Provider.Conformance.Tests.ps1'
     if (-not (Test-Path -LiteralPath $suitePath -PathType Leaf)) {
         throw "Provider conformance suite '$suitePath' was not found."
     }

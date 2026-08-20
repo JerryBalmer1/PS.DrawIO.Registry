@@ -31,6 +31,6 @@ if ($Task -in 'All', 'Test') {
 if ($Task -in 'All', 'Package') {
     Test-ModuleManifest $manifestPath | Out-Null
     New-Item -ItemType Directory -Path $packagePath -Force | Out-Null
-    Copy-Item (Join-Path $root 'src') $packagePath -Recurse -Force
+    Copy-Item (Join-Path $root 'src/*') $packagePath -Recurse -Force
     Write-Output "Packaged module at $packagePath"
 }

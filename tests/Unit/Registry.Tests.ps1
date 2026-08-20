@@ -78,7 +78,8 @@ Describe 'PS.DrawIO.Registry' {
         $previous = $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON
         try {
             Remove-Item Env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON -ErrorAction SilentlyContinue
-            $suite = Join-Path $PSScriptRoot '../../tests/Conformance/Provider.Conformance.Tests.ps1'
+            $suite = Join-Path $PSScriptRoot '../../src/Conformance/Provider.Conformance.Tests.ps1'
+            # Pester catches BeforeAll failures and returns a result; it does not rethrow.
             $result = Invoke-Pester -Path $suite -PassThru
             $result.FailedCount | Should -BeGreaterThan 0
         } finally {
@@ -90,7 +91,7 @@ Describe 'PS.DrawIO.Registry' {
         $previous = $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON
         try {
             $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON = (@{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'MissingCapabilities'; Shapes = @{} } } } | ConvertTo-Json -Depth 20 -Compress)
-            $result = Invoke-Pester -Path (Join-Path $PSScriptRoot '../../tests/Conformance/Provider.Conformance.Tests.ps1') -PassThru
+            $result = Invoke-Pester -Path (Join-Path $PSScriptRoot '../../src/Conformance/Provider.Conformance.Tests.ps1') -PassThru
             $result.FailedCount | Should -BeGreaterThan 0
         } finally {
             if ($null -eq $previous) { Remove-Item Env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON -ErrorAction SilentlyContinue } else { $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON = $previous }
@@ -101,25 +102,32 @@ Describe 'PS.DrawIO.Registry' {
         $previous = $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON
         try {
             $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON = (@{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'bad.name'; Capabilities = @('Shapes'); Shapes = @{} } } } | ConvertTo-Json -Depth 20 -Compress)
-            $result = Invoke-Pester -Path (Join-Path $PSScriptRoot '../../tests/Conformance/Provider.Conformance.Tests.ps1') -PassThru
+            $result = Invoke-Pester -Path (Join-Path $PSScriptRoot '../../src/Conformance/Provider.Conformance.Tests.ps1') -PassThru
             $result.FailedCount | Should -BeGreaterThan 0
         } finally {
             if ($null -eq $previous) { Remove-Item Env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON -ErrorAction SilentlyContinue } else { $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON = $previous }
         }
     }
 
-    It 'runs conformance from the packaged module payload' {
+    It 'packages the conformance suite in the module payload' {
+        $build = Join-Path $PSScriptRoot '../../build/build.ps1'
+        & pwsh -NoLogo -NoProfile -NonInteractive -File $build -Task Package | Out-Null
+        $packageSuite = Join-Path $PSScriptRoot '../../dist/PS.DrawIO.Registry/Conformance/Provider.Conformance.Tests.ps1'
+        Test-Path $packageSuite | Should -BeTrue
+    }
+
+    It 'throws when the packaged conformance suite is missing' {
         $build = Join-Path $PSScriptRoot '../../build/build.ps1'
         & pwsh -NoLogo -NoProfile -NonInteractive -File $build -Task Package | Out-Null
         $packageManifest = Join-Path $PSScriptRoot '../../dist/PS.DrawIO.Registry/PS.DrawIO.Registry.psd1'
-        $packageSuite = Join-Path $PSScriptRoot '../../dist/PS.DrawIO.Registry/src/Conformance/Provider.Conformance.Tests.ps1'
-        Test-Path $packageSuite | Should -BeTrue
+        $packageSuite = Join-Path $PSScriptRoot '../../dist/PS.DrawIO.Registry/Conformance/Provider.Conformance.Tests.ps1'
+        Remove-Item -LiteralPath $packageSuite -Force
         $manifest = Join-Path $TestDrive 'PackagedProvider.psd1'
         "@{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'Packaged'; Capabilities = @('Shapes'); Shapes = @{} } } }" | Set-Content $manifest
-        $command = "Import-Module '$packageManifest' -Force; Test-PSDrawIOProviderConformance -Path '$manifest'"
-        $output = & pwsh -NoLogo -NoProfile -NonInteractive -Command $command
-        $LASTEXITCODE | Should -Be 0
-        $output | Should -Contain 'True'
+        $command = "`$ErrorActionPreference = 'Stop'; Import-Module '$packageManifest' -Force; Test-PSDrawIOProviderConformance -Path '$manifest'"
+        $output = & pwsh -NoLogo -NoProfile -NonInteractive -Command $command 2>&1 | Out-String
+        $LASTEXITCODE | Should -Not -Be 0
+        $output | Should -Match 'Provider conformance suite'
     }
 
     It 'scaffolds a runnable provider conformance test' {
@@ -127,10 +135,15 @@ Describe 'PS.DrawIO.Registry' {
         $manifestPath = New-PSDrawIOProvider -Name Runnable -Path $destination
         $testPath = Join-Path $destination 'tests/Conformance/Provider.Conformance.Tests.ps1'
         Test-Path $testPath | Should -BeTrue
-        $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON = (Get-Content $manifestPath -Raw)
-        $result = Invoke-Pester -Path $testPath -PassThru
-        $result.FailedCount | Should -Be 0
-        $result.Containers.TotalCount | Should -BeGreaterThan 0
+        $previous = $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON
+        try {
+            $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON = (Import-PowerShellDataFile -LiteralPath $manifestPath | ConvertTo-Json -Depth 20 -Compress)
+            $result = Invoke-Pester -Path $testPath -PassThru
+            $result.FailedCount | Should -Be 0
+            $result.Containers.TotalCount | Should -BeGreaterThan 0
+        } finally {
+            if ($null -eq $previous) { Remove-Item Env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON -ErrorAction SilentlyContinue } else { $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON = $previous }
+        }
     }
 
     It 'has a valid about_ help topic file' {

@@ -2,24 +2,25 @@ BeforeAll {
     if ([string]::IsNullOrWhiteSpace($env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON)) {
         throw "PSDRAWIO_CONFORMANCE_MANIFEST_JSON is required to run provider conformance."
     }
-    $manifest = $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON | ConvertFrom-Json
-    $drawIO = $manifest.PrivateData.PSDrawIO
+    $script:conformanceManifest = $env:PSDRAWIO_CONFORMANCE_MANIFEST_JSON | ConvertFrom-Json
+    $script:drawIO = $script:conformanceManifest.PrivateData.PSDrawIO
 }
 
 Describe 'PS.DrawIO provider contract conformance' {
     It 'declares a contract version' {
-        $drawIO.ContractVersion | Should -BeGreaterOrEqual 1
+        $script:drawIO.ContractVersion | Should -BeGreaterOrEqual 1
     }
 
     It 'declares a valid provider name' {
-        $drawIO.ProviderName | Should -Match '^[A-Z][A-Za-z0-9]+$'
+        $script:drawIO.ProviderName | Should -Match '^[A-Z][A-Za-z0-9]+$'
     }
 
     It 'declares at least one capability' {
-        @($drawIO.Capabilities).Count | Should -BeGreaterThan 0
+        $script:drawIO.PSObject.Properties.Name | Should -Contain 'Capabilities'
+        @($script:drawIO.Capabilities).Count | Should -BeGreaterThan 0
     }
 
     It 'declares a Shapes map' {
-        $drawIO.PSObject.Properties.Name | Should -Contain 'Shapes'
+        $script:drawIO.PSObject.Properties.Name | Should -Contain 'Shapes'
     }
 }

@@ -145,8 +145,10 @@ Describe 'PS.DrawIO.Registry acceptance' -Tag Acceptance {
 
     It (Get-Label 'Module imports clean') -Tag Acceptance {
         $manifest = Join-Path $script:registryRoot 'src/PS.DrawIO.Registry.psd1'
-        $output = & pwsh -NoLogo -NoProfile -NonInteractive -Command "Import-Module '$manifest' -Force; (Get-Module PS.DrawIO.Registry).Name"
+        $command = "`$ErrorActionPreference = 'Stop'; Import-Module '$manifest' -Force; (Get-Module PS.DrawIO.Registry).Name"
+        $output = & pwsh -NoLogo -NoProfile -NonInteractive -Command $command 2>&1
         $LASTEXITCODE | Should -Be 0
+        @($output | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] }).Count | Should -Be 0
         $output | Should -Contain 'PS.DrawIO.Registry'
     }
 
