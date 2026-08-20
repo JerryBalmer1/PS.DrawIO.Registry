@@ -277,4 +277,28 @@ Describe 'PS.DrawIO.Registry' {
         { Test-PSDrawIOProviderConformance -Manifest $manifest -ErrorAction Stop } |
             Should -Throw 'Pester is required to run provider conformance.'
     }
+
+    It 'Register-PSDrawIOProvider -WhatIf does not register the provider' {
+        $manifest = @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'WhatIfReg'; Capabilities = @('Shapes'); Shapes = @{} } } }
+        Register-PSDrawIOProvider -Manifest $manifest -WhatIf
+        $found = Get-PSDrawIOProvider -Name WhatIfReg
+        $null -eq $found | Should -BeTrue
+    }
+
+    It 'Unregister-PSDrawIOProvider -WhatIf leaves the provider registered' {
+        $manifest = @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'WhatIfUnreg'; Capabilities = @('Shapes'); Shapes = @{} } } }
+        Register-PSDrawIOProvider -Manifest $manifest | Out-Null
+        Unregister-PSDrawIOProvider -Name WhatIfUnreg -WhatIf -Confirm:$false
+        $found = Get-PSDrawIOProvider -Name WhatIfUnreg
+        $found | Should -Not -BeNullOrEmpty
+        $found.ProviderName | Should -Be 'WhatIfUnreg'
+    }
+
+    It 'New-PSDrawIOProvider -WhatIf does not create the destination path' {
+        $destination = Join-Path $TestDrive 'WhatIfScaffold'
+        New-PSDrawIOProvider -Name WhatIfNew -Path $destination -WhatIf
+        Test-Path -LiteralPath $destination | Should -BeFalse
+        $manifestPath = Join-Path $destination 'PS.DrawIO.Provider.WhatIfNew.psd1'
+        Test-Path -LiteralPath $manifestPath | Should -BeFalse
+    }
 }
