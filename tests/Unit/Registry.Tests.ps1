@@ -150,4 +150,131 @@ Describe 'PS.DrawIO.Registry' {
         $helpFile = Join-Path $PSScriptRoot '../../src/en-US/about_PS.DrawIO.Registry.help.txt'
         Test-Path -LiteralPath $helpFile | Should -BeTrue
     }
+
+    It 'gets a registered provider by name and returns nothing for unknown names' {
+        $manifest = @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'Lookup'; Capabilities = @('Shapes'); Shapes = @{} } } }
+        Register-PSDrawIOProvider -Manifest $manifest | Out-Null
+
+        $found = Get-PSDrawIOProvider -Name Lookup
+        $found.ProviderName | Should -Be 'Lookup'
+        $found.ContractVersion | Should -Be 1
+
+        $missing = Get-PSDrawIOProvider -Name DoesNotExist
+        $null -eq $missing | Should -BeTrue
+    }
+
+    It 'registers a provider from a manifest path' {
+        $manifestPath = Join-Path $TestDrive 'PathRegister.psd1'
+        @"
+@{
+    PrivateData = @{
+        PSDrawIO = @{
+            ContractVersion = 1
+            ProviderName = 'PathReg'
+            Capabilities = @('Shapes')
+            Shapes = @{ Node = @{ Style = 'path-style' } }
+        }
+    }
+}
+"@ | Set-Content -LiteralPath $manifestPath -Encoding utf8
+
+        $declaration = Register-PSDrawIOProvider -Path $manifestPath
+        $declaration.ProviderName | Should -Be 'PathReg'
+        (Resolve-PSDrawIOShape -Provider PathReg -Type Node).Style | Should -Be 'path-style'
+    }
+
+    It 'rejects an invalid provider name at registration with PascalCase guidance' {
+        $manifest = @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'bad.name'; Capabilities = @('Shapes'); Shapes = @{} } } }
+        { Register-PSDrawIOProvider -Manifest $manifest -ErrorAction Stop } |
+            Should -Throw "Provider name 'bad.name' must be PascalCase, contain only letters and numbers, and contain no dots."
+    }
+
+    It 'rejects a second registration without -Force' {
+        $manifest = @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'Once'; Capabilities = @('Shapes'); Shapes = @{} } } }
+        Register-PSDrawIOProvider -Manifest $manifest | Out-Null
+        { Register-PSDrawIOProvider -Manifest $manifest -ErrorAction Stop } |
+            Should -Throw "Provider 'Once' is already registered. Use -Force to replace it."
+    }
+
+    It 'throws for an unregistered provider when resolving a shape and lists registered names' {
+        Register-PSDrawIOProvider -Manifest @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'Known'; Capabilities = @('Shapes'); Shapes = @{ A = @{ Style = 'a' } } } } } | Out-Null
+        { Resolve-PSDrawIOShape -Provider Missing -Type A -ErrorAction Stop } |
+            Should -Throw "Provider 'Missing' is not registered. Registered providers: Known"
+    }
+
+    It 'throws for an undeclared shape and lists declared shape names' {
+        Register-PSDrawIOProvider -Manifest @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'Shaped'; Capabilities = @('Shapes'); Shapes = @{ Declared = @{ Style = 'yes' } } } } } | Out-Null
+        { Resolve-PSDrawIOShape -Provider Shaped -Type MissingShape -ErrorAction Stop } |
+            Should -Throw "Provider 'Shaped' does not declare shape 'MissingShape'. Declared shapes: Declared"
+    }
+
+    It 'returns false for an unregistered provider capability and true when any provider has it' {
+        Test-PSDrawIOCapability -Provider Nobody -Name Shapes | Should -BeFalse
+
+        Register-PSDrawIOProvider -Manifest @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'Cap'; Capabilities = @('Shapes', 'Links'); Shapes = @{} } } } | Out-Null
+        Test-PSDrawIOCapability -Name Links | Should -BeTrue
+        Test-PSDrawIOCapability -Name Themes | Should -BeFalse
+    }
+
+    It 'validates module names and rejects non-matching diagram paths' {
+        Test-PSDrawIOName -Name 'PS.DrawIO.Registry' -Kind Module | Should -BeTrue
+        Test-PSDrawIOName -Name 'NotAModuleName' -Kind Module | Should -BeFalse
+        $err = { Test-PSDrawIOName -Path 'not-a-diagram.txt' -ErrorAction Stop } | Should -Throw -PassThru
+        $err.Exception.Message | Should -Be "Path 'not-a-diagram.txt' does not match 'X.Provider.drawio[.ps1|.psd1]'."
+    }
+
+    It 'throws when scaffolding with an invalid provider name' {
+        { New-PSDrawIOProvider -Name 'bad.name' -Path (Join-Path $TestDrive 'BadNameProvider') -ErrorAction Stop } |
+            Should -Throw "Provider name 'bad.name' must be PascalCase, contain only letters and numbers, and contain no dots."
+    }
+
+    It 'throws when the scaffold destination already exists' {
+        $destination = Join-Path $TestDrive 'ExistingProviderRoot'
+        New-Item -ItemType Directory -Path $destination | Out-Null
+        { New-PSDrawIOProvider -Name Existing -Path $destination -ErrorAction Stop } |
+            Should -Throw "Destination '$destination' already exists."
+    }
+
+    It 'throws when unregistering a provider that is not registered' {
+        { Unregister-PSDrawIOProvider -Name Ghost -Confirm:$false -ErrorAction Stop } |
+            Should -Throw "Provider 'Ghost' is not registered."
+    }
+
+    It 'returns false for converted manifests that fail name or contract checks' {
+        $badName = @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'bad.name'; Capabilities = @('Shapes'); Shapes = @{} } } }
+        Test-PSDrawIOProviderConformance -Manifest $badName | Should -BeFalse
+
+        $badContract = @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 2; ProviderName = 'Future'; Capabilities = @('Shapes'); Shapes = @{} } } }
+        Test-PSDrawIOProviderConformance -Manifest $badContract | Should -BeFalse
+    }
+
+    It 'runs conformance against an in-memory Manifest parameter' {
+        $destination = Join-Path $TestDrive 'ManifestConformance'
+        $manifestPath = New-PSDrawIOProvider -Name MemConf -Path $destination -Fixture
+        $manifestData = Import-PowerShellDataFile -LiteralPath $manifestPath
+        Test-PSDrawIOProviderConformance -Manifest $manifestData | Should -BeTrue
+    }
+
+    It 'throws when the provider conformance suite file is missing' {
+        Mock -ModuleName PS.DrawIO.Registry -CommandName Test-Path -ParameterFilter {
+            $LiteralPath -like '*Conformance*Provider.Conformance.Tests.ps1'
+        } -MockWith { $false }
+
+        $manifest = @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'SuiteMissing'; Capabilities = @('Shapes'); Shapes = @{} } } }
+        { Test-PSDrawIOProviderConformance -Manifest $manifest -ErrorAction Stop } |
+            Should -Throw 'Provider conformance suite * was not found.'
+    }
+
+    It 'throws when Pester is unavailable for conformance' {
+        Mock -ModuleName PS.DrawIO.Registry -CommandName Test-Path -ParameterFilter {
+            $LiteralPath -like '*Conformance*Provider.Conformance.Tests.ps1'
+        } -MockWith { $true }
+        Mock -ModuleName PS.DrawIO.Registry -CommandName Get-Command -ParameterFilter {
+            $Name -eq 'Invoke-Pester'
+        } -MockWith { $null }
+
+        $manifest = @{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'NoPester'; Capabilities = @('Shapes'); Shapes = @{} } } }
+        { Test-PSDrawIOProviderConformance -Manifest $manifest -ErrorAction Stop } |
+            Should -Throw 'Pester is required to run provider conformance.'
+    }
 }
