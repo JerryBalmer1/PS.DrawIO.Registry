@@ -3,7 +3,7 @@
   "Items": [
     {
       "Label": "Pester 5 suite green on Windows, Linux, and macOS",
-      "Signed": false,
+      "Signed": true,
       "Signer": "",
       "Date": "",
       "Reason": "macOS is explicitly out of scope until hardware is available."
