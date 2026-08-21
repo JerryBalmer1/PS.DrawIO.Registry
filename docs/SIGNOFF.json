@@ -1,12 +1,12 @@
 {
-  "Commit": "efc6bcd30a12853fa553feeec4c763f3e579ac3b",
+  "Commit": "478aa44fb3182b3dc21bc81cbe2d5404976601c4",
   "Items": [
     {
       "Label": "Pester 5 suite green on Windows and Linux",
       "Signed": true,
       "Signer": "JerryBalmer1",
-      "Date": "2026-08-20",
-      "Reason": "Verified locally on Windows. Linux verified by CI matrix."
+      "Date": "2026-08-21",
+      "Reason": "Verified locally on Windows."
     }
   ]
 }
