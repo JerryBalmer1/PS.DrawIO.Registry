@@ -222,7 +222,7 @@ Mirrors `REGISTRY.md` §8. If these diverge, `REGISTRY.md` wins and this file ge
 - [ ] Invalid names rejected at registration, not at first use
 
 ### Quality gates
-- [ ] Pester 5 green on Windows, Linux, macOS — PowerShell 7+
+- [ ] Pester 5 green on Windows and Linux — PowerShell 7+
 - [ ] Coverage ≥ 90% on `src/Public`, ≥ 80% overall
 - [ ] `PSScriptAnalyzer` clean at Error and Warning; suppressions justified inline
 - [ ] `Test-ModuleManifest` passes

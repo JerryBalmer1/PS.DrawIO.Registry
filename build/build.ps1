@@ -8,6 +8,9 @@ $root = Split-Path -Parent $PSScriptRoot
 $manifestPath = Join-Path $root 'src/PS.DrawIO.Registry.psd1'
 $packagePath = Join-Path $root 'dist/PS.DrawIO.Registry'
 
+. (Join-Path $PSScriptRoot 'Test-PSDrawIOHooksPath.ps1')
+Test-PSDrawIOHooksPath -Root $root
+
 if ($Task -in 'All', 'Clean') {
     if (Test-Path $packagePath) { Remove-Item $packagePath -Recurse -Force }
 }

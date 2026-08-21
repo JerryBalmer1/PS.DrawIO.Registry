@@ -121,13 +121,17 @@ Describe 'PS.DrawIO.Registry' {
         & pwsh -NoLogo -NoProfile -NonInteractive -File $build -Task Package | Out-Null
         $packageManifest = Join-Path $PSScriptRoot '../../dist/PS.DrawIO.Registry/PS.DrawIO.Registry.psd1'
         $packageSuite = Join-Path $PSScriptRoot '../../dist/PS.DrawIO.Registry/Conformance/Provider.Conformance.Tests.ps1'
-        Remove-Item -LiteralPath $packageSuite -Force
-        $manifest = Join-Path $TestDrive 'PackagedProvider.psd1'
-        "@{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'Packaged'; Capabilities = @('Shapes'); Shapes = @{} } } }" | Set-Content $manifest
-        $command = "`$ErrorActionPreference = 'Stop'; Import-Module '$packageManifest' -Force; Test-PSDrawIOProviderConformance -Path '$manifest'"
-        $output = & pwsh -NoLogo -NoProfile -NonInteractive -Command $command 2>&1 | Out-String
-        $LASTEXITCODE | Should -Not -Be 0
-        $output | Should -Match 'Provider conformance suite'
+        try {
+            Remove-Item -LiteralPath $packageSuite -Force
+            $manifest = Join-Path $TestDrive 'PackagedProvider.psd1'
+            "@{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'Packaged'; Capabilities = @('Shapes'); Shapes = @{} } } }" | Set-Content $manifest
+            $command = "`$ErrorActionPreference = 'Stop'; Import-Module '$packageManifest' -Force; Test-PSDrawIOProviderConformance -Path '$manifest'"
+            $output = & pwsh -NoLogo -NoProfile -NonInteractive -Command $command 2>&1 | Out-String
+            $LASTEXITCODE | Should -Not -Be 0
+            $output | Should -Match 'Provider conformance suite'
+        } finally {
+            & pwsh -NoLogo -NoProfile -NonInteractive -File $build -Task Package | Out-Null
+        }
     }
 
     It 'scaffolds a runnable provider conformance test' {
@@ -300,5 +304,39 @@ Describe 'PS.DrawIO.Registry' {
         Test-Path -LiteralPath $destination | Should -BeFalse
         $manifestPath = Join-Path $destination 'PS.DrawIO.Provider.WhatIfNew.psd1'
         Test-Path -LiteralPath $manifestPath | Should -BeFalse
+    }
+
+    It 'warns when .githooks/commit-msg exists and core.hooksPath is unset' {
+        # Tests Test-PSDrawIOHooksPath directly against a temp root — never mutates
+        # the real repo's git config and never invokes build.ps1 destructive tasks.
+        $helper = Join-Path $PSScriptRoot '../../build/Test-PSDrawIOHooksPath.ps1'
+        . $helper
+
+        $sourceHook = Join-Path $PSScriptRoot '../../.githooks/commit-msg'
+        Test-Path -LiteralPath $sourceHook | Should -BeTrue
+
+        $tempRoot = Join-Path $TestDrive 'hooks-root'
+        $tempHooks = Join-Path $tempRoot '.githooks'
+        New-Item -ItemType Directory -Path $tempHooks -Force | Out-Null
+        Copy-Item -LiteralPath $sourceHook -Destination (Join-Path $tempHooks 'commit-msg') -Force
+        git -C $tempRoot init --quiet 2>$null | Out-Null
+
+        $emptyConfig = Join-Path $TestDrive 'empty.gitconfig'
+        Set-Content -LiteralPath $emptyConfig -Value ''
+        $prevGlobal = $env:GIT_CONFIG_GLOBAL
+        $prevSystem = $env:GIT_CONFIG_SYSTEM
+        try {
+            # Isolate from the developer's global/system git config only (env vars).
+            # Temp repo local config is never the real repository.
+            $env:GIT_CONFIG_GLOBAL = $emptyConfig
+            $env:GIT_CONFIG_SYSTEM = $emptyConfig
+            $hookWarnings = $null
+            $null = Test-PSDrawIOHooksPath -Root $tempRoot -WarningAction SilentlyContinue -WarningVariable hookWarnings
+            $messages = @($hookWarnings | ForEach-Object { "$_" })
+            ($messages -join "`n") | Should -Match 'core\.hooksPath'
+        } finally {
+            if ($null -eq $prevGlobal) { Remove-Item Env:GIT_CONFIG_GLOBAL -ErrorAction SilentlyContinue } else { $env:GIT_CONFIG_GLOBAL = $prevGlobal }
+            if ($null -eq $prevSystem) { Remove-Item Env:GIT_CONFIG_SYSTEM -ErrorAction SilentlyContinue } else { $env:GIT_CONFIG_SYSTEM = $prevSystem }
+        }
     }
 }

@@ -283,7 +283,7 @@ It must also emit a **conformance suite** — Pester tests that every provider r
 
 ### Quality gates
 
-- [ ] Pester 5 suite green on **Windows, Linux, and macOS**, PowerShell 7+
+- [ ] Pester 5 suite green on **Windows and Linux**, PowerShell 7+
 - [ ] Code coverage ≥ 90% on `src/Public`, ≥ 80% overall
 - [ ] `PSScriptAnalyzer` clean at Error and Warning; any suppression carries an inline justification
 - [ ] `Test-ModuleManifest` passes
