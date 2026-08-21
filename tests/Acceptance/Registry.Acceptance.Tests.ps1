@@ -124,8 +124,37 @@ Describe 'PS.DrawIO.Registry acceptance' -Tag Acceptance {
         $workflow | Should -Match 'windows-latest'
         $workflow | Should -Match 'ubuntu-latest'
         $workflow | Should -Match 'pwsh'
-        $signoff = Get-Content (Join-Path $script:registryRoot 'docs/SIGNOFF.json') -Raw | ConvertFrom-Json
-        $signoff.Commit | Should -Be (git -C $script:registryRoot rev-parse HEAD)
+
+        # Sign-off cannot equal HEAD after the file is committed (hash moves).
+        # Ancestry + drift: Commit must be a real commit; git diff Commit HEAD
+        # may list only docs/SIGNOFF.json. Working-tree/index changes under src/
+        # relative to Commit also count as stale source (proof: touch src/).
+        $signoffPath = Join-Path $script:registryRoot 'docs/SIGNOFF.json'
+        $signoff = Get-Content -LiteralPath $signoffPath -Raw | ConvertFrom-Json
+        $signoff.Commit | Should -Not -BeNullOrEmpty
+        $commitType = git -C $script:registryRoot cat-file -t $signoff.Commit 2>$null
+        $commitType | Should -Be 'commit'
+        git -C $script:registryRoot merge-base --is-ancestor $signoff.Commit HEAD
+        $LASTEXITCODE | Should -Be 0 -Because "sign-off Commit must be an ancestor of HEAD"
+
+        $committedDrift = @(
+            git -C $script:registryRoot diff --name-only $signoff.Commit HEAD |
+                Where-Object { $_ -and ($_ -ne 'docs/SIGNOFF.json') }
+        )
+        $committedDrift | Should -BeNullOrEmpty -Because "signed commit $($signoff.Commit) must match HEAD except docs/SIGNOFF.json; drifted: $($committedDrift -join ', ')"
+
+        $sourceDrift = @(
+            git -C $script:registryRoot diff --name-only $signoff.Commit -- src/
+            git -C $script:registryRoot diff --name-only --cached $signoff.Commit -- src/
+        ) | Where-Object { $_ } | Select-Object -Unique
+        $sourceDrift | Should -BeNullOrEmpty -Because "src/ must not drift from signed commit $($signoff.Commit); drifted: $($sourceDrift -join ', ')"
+
+        $signoff.Items | Should -Not -BeNullOrEmpty
+        foreach ($item in @($signoff.Items)) {
+            $item.Signed | Should -BeTrue -Because "sign-off item '$($item.Label)' must be Signed"
+            $item.Signer | Should -Not -BeNullOrEmpty -Because "sign-off item '$($item.Label)' must name a Signer"
+            $item.Date | Should -Not -BeNullOrEmpty -Because "sign-off item '$($item.Label)' must have a Date"
+        }
     }
 
     It (Get-Label 'Code coverage') -Tag Acceptance {

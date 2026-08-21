@@ -339,4 +339,48 @@ Describe 'PS.DrawIO.Registry' {
             if ($null -eq $prevSystem) { Remove-Item Env:GIT_CONFIG_SYSTEM -ErrorAction SilentlyContinue } else { $env:GIT_CONFIG_SYSTEM = $prevSystem }
         }
     }
+
+    It 'throws when a Pester container discovered zero tests' {
+        # Guards Assert-PSDrawIOPesterContainers (build empty-container check).
+        # Pester 5 containers expose TotalCount, not .Tests after a run.
+        $helper = Join-Path $PSScriptRoot '../../build/Assert-PSDrawIOPesterContainers.ps1'
+        . $helper
+
+        $emptyContainer = [pscustomobject]@{
+            Name       = 'EmptyContainer.Tests.ps1'
+            TotalCount = 0
+        }
+        $result = [pscustomobject]@{
+            Containers = @($emptyContainer)
+        }
+
+        { Assert-PSDrawIOPesterContainers -Result $result } |
+            Should -Throw '*container produced no tests*EmptyContainer.Tests.ps1*'
+    }
+
+    It 'throws when the Pester result has zero containers' {
+        $helper = Join-Path $PSScriptRoot '../../build/Assert-PSDrawIOPesterContainers.ps1'
+        . $helper
+
+        $result = [pscustomobject]@{
+            Containers = @()
+        }
+
+        { Assert-PSDrawIOPesterContainers -Result $result } |
+            Should -Throw '*no test containers*'
+    }
+
+    It 'does not throw when every Pester container discovered tests' {
+        $helper = Join-Path $PSScriptRoot '../../build/Assert-PSDrawIOPesterContainers.ps1'
+        . $helper
+
+        $result = [pscustomobject]@{
+            Containers = @(
+                [pscustomobject]@{ Name = 'A.Tests.ps1'; TotalCount = 1 }
+                [pscustomobject]@{ Name = 'B.Tests.ps1'; TotalCount = 5 }
+            )
+        }
+
+        { Assert-PSDrawIOPesterContainers -Result $result } | Should -Not -Throw
+    }
 }

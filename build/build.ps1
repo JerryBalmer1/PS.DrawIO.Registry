@@ -9,6 +9,7 @@ $manifestPath = Join-Path $root 'src/PS.DrawIO.Registry.psd1'
 $packagePath = Join-Path $root 'dist/PS.DrawIO.Registry'
 
 . (Join-Path $PSScriptRoot 'Test-PSDrawIOHooksPath.ps1')
+. (Join-Path $PSScriptRoot 'Assert-PSDrawIOPesterContainers.ps1')
 Test-PSDrawIOHooksPath -Root $root
 
 if ($Task -in 'All', 'Clean') {
@@ -25,10 +26,11 @@ if ($Task -in 'All', 'Test') {
         if ($isCI) { exit 1 }
         throw "Pester: $($result.FailedCount) test(s) failed."
     }
-    $ranNothing = @($result.Containers | Where-Object { $_.Tests.Count -eq 0 })
-    if ($ranNothing) {
+    try {
+        Assert-PSDrawIOPesterContainers -Result $result
+    } catch {
         if ($isCI) { exit 1 }
-        throw "Pester: container produced no tests: $($ranNothing.Name -join ', ')"
+        throw
     }
 }
 if ($Task -in 'All', 'Package') {
