@@ -6,13 +6,18 @@ function Test-PSDrawIOProviderConformance {
     Path to a provider manifest.
     .PARAMETER Manifest
     Imported provider manifest data.
+    .PARAMETER ModuleName
+    Optional module leaf name for the Manifest parameter set. When supplied, it
+    must bind to ProviderName as PS.DrawIO.Provider.<ProviderName>. When omitted,
+    no module-name evidence exists to check.
     .EXAMPLE
     Test-PSDrawIOProviderConformance -Path ./PS.DrawIO.Provider.PowerShell.psd1
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory, ParameterSetName = 'Path')][string]$Path,
-        [Parameter(Mandatory, ParameterSetName = 'Manifest')][object]$Manifest
+        [Parameter(Mandatory, ParameterSetName = 'Manifest')][object]$Manifest,
+        [Parameter(ParameterSetName = 'Manifest')][string]$ModuleName
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'Path' -and -not (Test-Path -LiteralPath $Path -PathType Leaf)) {
@@ -27,6 +32,20 @@ function Test-PSDrawIOProviderConformance {
     }
     $validName = Test-PSDrawIOProviderNameInternal -Name $declaration.ProviderName
     if (-not $validName -or $declaration.ContractVersion -ne $script:PSDrawIORegistryState.ContractVersion) { return $false }
+
+    # Module-name binding: Path always has a filename; Manifest only when -ModuleName is supplied.
+    # Omitting -ModuleName on Manifest is not a silent skip - there is no filename evidence to check.
+    if ($PSCmdlet.ParameterSetName -eq 'Path') {
+        $resolvedModuleName = [System.IO.Path]::GetFileNameWithoutExtension((Split-Path -Leaf $Path))
+        if (-not (Test-PSDrawIOProviderModuleBinding -ProviderName $declaration.ProviderName -ModuleName $resolvedModuleName)) {
+            return $false
+        }
+    }
+    elseif ($PSBoundParameters.ContainsKey('ModuleName')) {
+        if (-not (Test-PSDrawIOProviderModuleBinding -ProviderName $declaration.ProviderName -ModuleName $ModuleName)) {
+            return $false
+        }
+    }
 
     $moduleRoot = Split-Path $PSScriptRoot -Parent
     $suitePath = Join-Path $moduleRoot 'Conformance/Provider.Conformance.Tests.ps1'

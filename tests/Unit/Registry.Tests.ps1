@@ -123,7 +123,8 @@ Describe 'PS.DrawIO.Registry' {
         $packageSuite = Join-Path $PSScriptRoot '../../dist/PS.DrawIO.Registry/Conformance/Provider.Conformance.Tests.ps1'
         try {
             Remove-Item -LiteralPath $packageSuite -Force
-            $manifest = Join-Path $TestDrive 'PackagedProvider.psd1'
+            # Leaf must bind to ProviderName so the missing-suite infrastructure path is reached.
+            $manifest = Join-Path $TestDrive 'PS.DrawIO.Provider.Packaged.psd1'
             "@{ PrivateData = @{ PSDrawIO = @{ ContractVersion = 1; ProviderName = 'Packaged'; Capabilities = @('Shapes'); Shapes = @{} } } }" | Set-Content $manifest
             $command = "`$ErrorActionPreference = 'Stop'; Import-Module '$packageManifest' -Force; Test-PSDrawIOProviderConformance -Path '$manifest'"
             $output = & pwsh -NoLogo -NoProfile -NonInteractive -Command $command 2>&1 | Out-String
@@ -257,6 +258,82 @@ Describe 'PS.DrawIO.Registry' {
         $manifestPath = New-PSDrawIOProvider -Name MemConf -Path $destination -Fixture
         $manifestData = Import-PowerShellDataFile -LiteralPath $manifestPath
         Test-PSDrawIOProviderConformance -Manifest $manifestData | Should -BeTrue
+    }
+
+    It 'returns true when Path module leaf binds to ProviderName' {
+        $destination = Join-Path $TestDrive 'BindAgree'
+        $manifestPath = New-PSDrawIOProvider -Name BindAgree -Path $destination -Fixture
+        Test-PSDrawIOProviderConformance -Path $manifestPath | Should -BeTrue
+    }
+
+    It 'returns false when Path module leaf disagrees with ProviderName' {
+        $directory = Join-Path $TestDrive 'BindMismatch'
+        New-Item -ItemType Directory -Path $directory | Out-Null
+        $manifestPath = Join-Path $directory 'PS.DrawIO.Provider.Foo.psd1'
+        @'
+@{
+    ModuleVersion = '0.1.0'
+    GUID = '11111111-1111-1111-1111-111111111111'
+    PrivateData = @{
+        PSDrawIO = @{
+            ContractVersion = 1
+            ProviderName = 'Bar'
+            Capabilities = @('Shapes')
+            Shapes = @{}
+        }
+    }
+}
+'@ | Set-Content -LiteralPath $manifestPath -Encoding utf8NoBOM
+        Test-PSDrawIOProviderConformance -Path $manifestPath | Should -BeFalse
+    }
+
+    It 'returns false when Path module leaf has multi-dot Provider segment' {
+        $directory = Join-Path $TestDrive 'BindMultiDot'
+        New-Item -ItemType Directory -Path $directory | Out-Null
+        $manifestPath = Join-Path $directory 'PS.DrawIO.Provider.AzureDevOps.Pipelines.psd1'
+        @'
+@{
+    ModuleVersion = '0.1.0'
+    GUID = '22222222-2222-2222-2222-222222222222'
+    PrivateData = @{
+        PSDrawIO = @{
+            ContractVersion = 1
+            ProviderName = 'AzureDevOpsPipelines'
+            Capabilities = @('Shapes')
+            Shapes = @{}
+        }
+    }
+}
+'@ | Set-Content -LiteralPath $manifestPath -Encoding utf8NoBOM
+        Test-PSDrawIOProviderConformance -Path $manifestPath | Should -BeFalse
+    }
+
+    It 'returns true for Manifest without ModuleName when content is valid' {
+        $manifest = @{
+            PrivateData = @{
+                PSDrawIO = @{
+                    ContractVersion = 1
+                    ProviderName = 'NoModuleName'
+                    Capabilities = @('Shapes')
+                    Shapes = @{}
+                }
+            }
+        }
+        Test-PSDrawIOProviderConformance -Manifest $manifest | Should -BeTrue
+    }
+
+    It 'returns false when Manifest ModuleName is supplied and mismatched' {
+        $manifest = @{
+            PrivateData = @{
+                PSDrawIO = @{
+                    ContractVersion = 1
+                    ProviderName = 'Expected'
+                    Capabilities = @('Shapes')
+                    Shapes = @{}
+                }
+            }
+        }
+        Test-PSDrawIOProviderConformance -Manifest $manifest -ModuleName 'PS.DrawIO.Provider.Other' | Should -BeFalse
     }
 
     It 'throws when the provider conformance suite file is missing' {
