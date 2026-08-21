@@ -258,52 +258,52 @@ It must also emit a **conformance suite** — Pester tests that every provider r
 
 ### Contract
 
-- [ ] Provider contract v1 is **frozen and documented** in `docs/CONTRACT.md`
-- [ ] Contract schema validates a provider declaration and rejects a malformed one with a message naming the offending field
-- [ ] `ContractVersion` is read from `PrivateData.PSDrawIO` of the provider manifest
-- [ ] Registration **fails loudly** on contract major mismatch, naming both versions
+- [x] Provider contract v1 is **frozen and documented** in `docs/CONTRACT.md`
+- [x] Contract schema validates a provider declaration and rejects a malformed one with a message naming the offending field
+- [x] `ContractVersion` is read from `PrivateData.PSDrawIO` of the provider manifest
+- [x] Registration **fails loudly** on contract major mismatch, naming both versions
 
 ### Public surface
 
-- [ ] `Register-PSDrawIOProvider` — validates, then stores
-- [ ] `Get-PSDrawIOProvider` — lists registered providers, filterable
-- [ ] `Unregister-PSDrawIOProvider`
-- [ ] `Resolve-PSDrawIOShape` — semantic type → declaration
-- [ ] `Test-PSDrawIOCapability` — capability negotiation
-- [ ] `New-PSDrawIOProvider` — scaffolds a real provider **and** test fixtures
-- [ ] `Test-PSDrawIOProviderConformance` — runs the conformance suite
-- [ ] `Test-PSDrawIOName` — validates module, provider, and filename conventions
-- [ ] Every public function has comment-based help with at least one working example
+- [x] `Register-PSDrawIOProvider` — validates, then stores
+- [x] `Get-PSDrawIOProvider` — lists registered providers, filterable
+- [x] `Unregister-PSDrawIOProvider`
+- [x] `Resolve-PSDrawIOShape` — semantic type → declaration
+- [x] `Test-PSDrawIOCapability` — capability negotiation
+- [x] `New-PSDrawIOProvider` — scaffolds a real provider **and** test fixtures
+- [x] `Test-PSDrawIOProviderConformance` — runs the conformance suite
+- [x] `Test-PSDrawIOName` — validates module, provider, and filename conventions
+- [x] Every public function has comment-based help with at least one working example
 
 ### Naming enforcement
 
-- [ ] Provider names validated at registration (PascalCase, no dots, not already taken)
-- [ ] Filename convention parser: given a path, returns component / provider / kind, or a clear failure
-- [ ] Invalid names rejected at registration, not at first use
+- [x] Provider names validated at registration (PascalCase, no dots, not already taken)
+- [x] Filename convention parser: given a path, returns component / provider / kind, or a clear failure
+- [x] Invalid names rejected at registration, not at first use
 
 ### Quality gates
 
-- [ ] Pester 5 suite green on **Windows and Linux**, PowerShell 7+
-- [ ] Code coverage ≥ 90% on `src/Public`, ≥ 80% overall
-- [ ] `PSScriptAnalyzer` clean at Error and Warning; any suppression carries an inline justification
-- [ ] `Test-ModuleManifest` passes
-- [ ] Module imports clean in a **fresh session with zero other PS.DrawIO modules present**
-- [ ] No function in `src/Public` exceeds 100 lines
-- [ ] All exported names use [approved verbs](https://learn.microsoft.com/powershell/scripting/developer/cmdlet/approved-verbs-for-windows-powershell-commands)
+- [x] Pester 5 suite green on **Windows and Linux**, PowerShell 7+
+- [x] Code coverage ≥ 90% on `src/Public`, ≥ 80% overall
+- [x] `PSScriptAnalyzer` clean at Error and Warning; any suppression carries an inline justification
+- [x] `Test-ModuleManifest` passes
+- [x] Module imports clean in a **fresh session with zero other PS.DrawIO modules present**
+- [x] No function in `src/Public` exceeds 100 lines
+- [x] All exported names use [approved verbs](https://learn.microsoft.com/powershell/scripting/developer/cmdlet/approved-verbs-for-windows-powershell-commands)
 
 ### Proof it actually works
 
-- [ ] A scaffolded provider registers, resolves, and passes conformance **end to end in a test**
-- [ ] Two providers coexist without interfering
-- [ ] A provider declaring contract `2` is rejected by a registry on contract `1`, with a useful error
-- [ ] A deliberately malformed provider is rejected — this test must exist and must not be skipped
+- [x] A scaffolded provider registers, resolves, and passes conformance **end to end in a test**
+- [x] Two providers coexist without interfering
+- [x] A provider declaring contract `2` is rejected by a registry on contract `1`, with a useful error
+- [x] A deliberately malformed provider is rejected — this test must exist and must not be skipped
 
 ### Documentation
 
-- [ ] `README.md` — install, register a provider, resolve a shape, in under 20 lines
-- [ ] `docs/CONTRACT.md` — the frozen contract
-- [ ] `docs/AUTHORING-PROVIDERS.md` — how to write one
-- [ ] `CHANGELOG.md` following Keep a Changelog
+- [x] `README.md` — install, register a provider, resolve a shape, in under 20 lines
+- [x] `docs/CONTRACT.md` — the frozen contract
+- [x] `docs/AUTHORING-PROVIDERS.md` — how to write one
+- [x] `CHANGELOG.md` following Keep a Changelog
 
 ### Explicitly NOT in v1
 

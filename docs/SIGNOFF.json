@@ -6,7 +6,7 @@
       "Signed": true,
       "Signer": "JerryBalmer1",
       "Date": "2026-08-21",
-      "Reason": "Verified locally on Windows."
+      "Reason": "Verified on Windows and Linux via CI matrix run #17."
     }
   ]
 }
