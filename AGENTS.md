@@ -201,46 +201,47 @@ Mirrors `REGISTRY.md` §8. If these diverge, `REGISTRY.md` wins and this file ge
 **v1 is done when every box below is checked. Not before. Nothing outside this list is required.**
 
 ### Contract
-- [ ] Contract v1 frozen and documented in `docs/CONTRACT.md`
-- [ ] Declaration schema validates good input, rejects bad input naming the offending field
-- [ ] `ContractVersion` read from provider manifest `PrivateData.PSDrawIO`
-- [ ] Contract major mismatch fails loudly, naming both versions
+- [x] Contract v1 frozen and documented in `docs/CONTRACT.md`
+- [x] Declaration schema validates good input, rejects bad input naming the offending field
+- [x] `ContractVersion` read from provider manifest `PrivateData.PSDrawIO`
+- [x] Contract major mismatch fails loudly, naming both versions
 
 ### Public surface — all with comment-based help and a working example
-- [ ] `Register-PSDrawIOProvider`
-- [ ] `Get-PSDrawIOProvider`
-- [ ] `Unregister-PSDrawIOProvider`
-- [ ] `Resolve-PSDrawIOShape`
-- [ ] `Test-PSDrawIOCapability`
-- [ ] `New-PSDrawIOProvider` — scaffolds real providers **and** test fixtures
-- [ ] `Test-PSDrawIOProviderConformance`
-- [ ] `Test-PSDrawIOName`
+- [x] `Register-PSDrawIOProvider`
+- [x] `Get-PSDrawIOProvider`
+- [x] `Unregister-PSDrawIOProvider`
+- [x] `Resolve-PSDrawIOShape`
+- [x] `Test-PSDrawIOCapability`
+- [x] `New-PSDrawIOProvider` — scaffolds real providers **and** test fixtures
+- [x] `Test-PSDrawIOProviderConformance`
+- [x] `Test-PSDrawIOName`
+- [x] Every public function has comment-based help with at least one working example
 
 ### Naming enforcement
-- [ ] Provider names validated at registration (PascalCase, no dots, not taken)
-- [ ] Filename parser handles `X.Provider.drawio[.ps1|.psd1]`, returns parts or a clear failure
-- [ ] Invalid names rejected at registration, not at first use
+- [x] Provider names validated at registration (PascalCase, no dots, not taken)
+- [x] Filename parser handles `X.Provider.drawio[.ps1|.psd1]`, returns parts or a clear failure
+- [x] Invalid names rejected at registration, not at first use
 
 ### Quality gates
-- [ ] Pester 5 green on Windows and Linux — PowerShell 7+
-- [ ] Coverage ≥ 90% on `src/Public`, ≥ 80% overall
-- [ ] `PSScriptAnalyzer` clean at Error and Warning; suppressions justified inline
-- [ ] `Test-ModuleManifest` passes
-- [ ] Imports clean in a fresh session with no other PS.DrawIO modules
-- [ ] No `src/Public` function exceeds 100 lines
-- [ ] All exported names use approved verbs
+- [x] Pester 5 green on Windows and Linux — PowerShell 7+
+- [x] Coverage ≥ 90% on `src/Public`, ≥ 80% overall
+- [x] `PSScriptAnalyzer` clean at Error and Warning; suppressions justified inline
+- [x] `Test-ModuleManifest` passes
+- [x] Imports clean in a fresh session with no other PS.DrawIO modules
+- [x] No `src/Public` function exceeds 100 lines
+- [x] All exported names use approved verbs
 
 ### Proof
-- [ ] Scaffolded provider registers → resolves → passes conformance, end to end, in a test
-- [ ] Two providers coexist without interference
-- [ ] Contract-`2` provider rejected by contract-`1` registry with a useful error
-- [ ] A deliberately malformed provider is rejected — this test exists and is not skipped
+- [x] Scaffolded provider registers → resolves → passes conformance, end to end, in a test
+- [x] Two providers coexist without interference
+- [x] Contract-`2` provider rejected by contract-`1` registry with a useful error
+- [x] A deliberately malformed provider is rejected — this test exists and is not skipped
 
 ### Documentation
-- [ ] `README.md` — install → register → resolve in under 20 lines
-- [ ] `docs/CONTRACT.md`
-- [ ] `docs/AUTHORING-PROVIDERS.md`
-- [ ] `CHANGELOG.md` per Keep a Changelog
+- [x] `README.md` — install → register → resolve in under 20 lines
+- [x] `docs/CONTRACT.md`
+- [x] `docs/AUTHORING-PROVIDERS.md`
+- [x] `CHANGELOG.md` per Keep a Changelog
 
 ### Explicitly NOT v1 — do not build these
 - ✗ Any provider implementation
