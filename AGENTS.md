@@ -148,7 +148,8 @@ Engaged when: docs change, or a public function's behavior changes.
 ## 4. Commands
 
 ```powershell
-./build/build.ps1                          # full: clean → analyze → test → package
+./build/build.ps1                          # clean → analyze → test → package (only if all tests pass)
+./build/build.ps1 -Task Package            # produce dist/ artifact
 ./build/build.ps1 -Task Test               # tests only
 Invoke-Pester ./tests -Output Detailed     # direct
 Invoke-Pester ./tests -PassThru             # inspect FailedCount and Containers.Result
@@ -156,6 +157,8 @@ Invoke-ScriptAnalyzer -Path ./src -Recurse -Severity Error,Warning
 Test-ModuleManifest ./src/PS.DrawIO.Registry.psd1
 Import-Module ./src/PS.DrawIO.Registry.psd1 -Force
 ```
+
+Test throws before Package, so any failing test blocks the default artifact. Precedent: PS.DrawIO.Provider.PowerShell ADR 0004.
 
 Always verify in a **fresh session with no other PS.DrawIO modules loaded.** A registry that only works when something else is already imported is broken.
 

@@ -4,6 +4,8 @@ All notable changes to this project will be documented here.
 
 ## [Unreleased]
 
+- Documented that default `./build/build.ps1` packages only when every test passes; use `-Task Package` for the artifact alone (PS.DrawIO.Provider.PowerShell ADR 0004).
+
 ## [1.1.0] - 2026-08-21
 
 - Documented the optional `Metadata` hashtable already accepted on `PrivateData.PSDrawIO` (opaque provider data; registry stores and returns it without interpretation).
