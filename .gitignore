@@ -4,3 +4,4 @@ coverage.xml
 *.coverage
 TestResults*.xml
 docs/__AgentHandoff.md
+docs/_tmp_*
