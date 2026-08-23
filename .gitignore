@@ -5,3 +5,6 @@ coverage.xml
 TestResults*.xml
 docs/__AgentHandoff.md
 docs/_tmp_*
+.agent/EXECUTION.md
+_AgentRequests.md
+_PromptExecutionResults.md

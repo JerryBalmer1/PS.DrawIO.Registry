@@ -340,6 +340,7 @@ Listed so nobody "helpfully" adds them:
    │   └── DECISIONS/                   ADRs, numbered, append-only
    ├── build/
    │   └── build.ps1                    clean → analyze → test → package
+   ├── .agent/                          agent protocol (TRAPS.md; EXECUTION.md gitignored)
    ├── DoNotModify/                     ◄── OFF LIMITS. See AGENTS.md.
    ├── AGENTS.md
    ├── README.md
