@@ -135,3 +135,65 @@ output is dropped.
 
 **Fix:** Exclude rules explicitly when you need them not to run; do not assume
 severity alone skips rule execution.
+
+### T-012 — Acceptance It passes while only asserting half of its checkbox label
+
+**Symptom:** An acceptance test is green even though a component named in the
+checkbox label does not exist yet. Example: "Reads LayoutHints and passes them
+to the layout strategy without interpreting geometry" passed with no layout
+strategy in the module — the body only required non-empty `IR.LayoutHints` and
+conditionally required `Invoke-PSDrawIOLayout` if convert had already stamped
+geometry.
+
+**Cause:** The label bundles two (or more) claims with "and", or names a
+component that does not exist yet. The second claim is untestable until that
+component exists, so the assertion body silently covers only the first half.
+Green means "the asserted half holds," not "the full checkbox is done." This is
+the eighth cannot-fail-shaped finding in this project: a check that cannot
+fail for the reason its name implies.
+
+**Fix:** When a checkbox label contains "and" or names a component that does
+not exist yet, state in `EXECUTION.md` which half is actually asserted. A label
+that overclaims is a **spec defect**, not a test defect — do not weaken the
+test to match the label, and do not treat a green It as proof of the untested
+half.
+
+### T-013 — Omitting a mandatory parameter prompts instead of throwing
+
+**Symptom:** A test or agent command that calls a function without a mandatory
+parameter appears to hang. The terminal shows `Provider:` (or similar) and
+stops. Later commands are swallowed as answers to the prompt. Multiple
+terminals look "stuck" after one omission.
+
+**Cause:** Interactive PowerShell prompts for missing mandatory parameters. It
+does not throw `ParameterBindingException` unless the host is non-interactive.
+Pester in an interactive agent terminal inherits that behavior. One prompt can
+consume subsequent tool commands as parameter values.
+
+**Fix:** Never invoke a function without its mandatory parameters to "prove"
+binding. Assert parameter metadata instead:
+
+```powershell
+$p = (Get-Command Foo).Parameters['Bar']
+$attr = $p.Attributes | Where-Object { $_ -is [System.Management.Automation.ParameterAttribute] }
+$attr.Mandatory | Should -BeTrue
+```
+
+Always run agent PowerShell as `pwsh -NoProfile -NonInteractive -File <path>`.
+Under `-NonInteractive`, missing mandatory parameters become binding errors.
+
+### T-014 — Two-attempt rule counts symptoms, not intentions
+
+**Symptom:** An agent burns many terminals and "attempts" on what looks like
+separate failures (empty returns, hung shells, ignored commands), then keeps
+retrying past the two-attempt limit.
+
+**Cause:** The two-attempt rule is about the **same symptom** twice, not about
+distinct planned steps. One mandatory-parameter prompt (T-013) can present as
+many stuck terminals. Counting each stuck shell as a new attempt hides that
+the underlying failure already happened twice.
+
+**Fix:** When the same symptom recurs (prompt hang, `>>` continuation, empty
+return pair), record it under Blocked after the second occurrence and stop.
+Do not open a third terminal to "try a different approach" at the same
+symptom. Check `TRAPS.md` before forming a new hypothesis.
